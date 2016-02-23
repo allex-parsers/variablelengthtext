@@ -90,7 +90,11 @@ function createVariableLengthTextParser(execlib) {
     };
     DoubleBufferWithCursor.prototype.process = function (buffer, cb) {
       if (this.previous) {
-        throw new lib.Error('CANNOT_SET_BUFFER_PREVIOUS_STILL_EXISTS');
+        if (this.previous.unprocessed() < 1) {
+          this.purgePrevious();
+        } else {
+          throw new lib.Error('CANNOT_SET_BUFFER_PREVIOUS_STILL_EXISTS');
+        }
       }
       this.previous = this.current;
       this.current = new BufferWithCursor(buffer);
@@ -102,8 +106,7 @@ function createVariableLengthTextParser(execlib) {
             cb(this.chunk());
         }
       }
-      //console.log('still got current',this.current);
-      cb(this.chunk());
+      //cb(this.chunk());
     };
     DoubleBufferWithCursor.prototype.atDelimiter = function () {
       var p = this.previous,
@@ -208,7 +211,6 @@ function createVariableLengthTextParser(execlib) {
     };
     VariableLengthTextParser.prototype.takeChunk = function (ret, completechunk) {
       var rec;
-      //console.log('got it', completechunk.toString());
       if (completechunk) {
         if (this.isNewRecord(completechunk)) {
           rec = this.buffer;
@@ -223,7 +225,7 @@ function createVariableLengthTextParser(execlib) {
       }
     };
     VariableLengthTextParser.prototype.finalize = function(){
-      console.log('finalize',this.doubleBuffer.current);
+      //console.log('finalize',this.doubleBuffer.current.remaining(), this.doubleBuffer.chunk());
       if(this.buffer){
         this.postProcessFileToData(this.buffer);
         return this.buffer;
@@ -233,6 +235,13 @@ function createVariableLengthTextParser(execlib) {
       return true;
     };
     VariableLengthTextParser.prototype.createBuffer = function (data) {
+      if (this.fieldList.length>0) {
+        return this.createObjBuffer(data);
+      } else {
+        return data.toString('utf8').trim();
+      }
+    };
+    VariableLengthTextParser.prototype.createObjBuffer = function (data) {
       var ret = {},
         fields = data.toString().split(this.fieldDelimiter);
       this.fieldList.forEach(function(fieldname, fieldindex){
