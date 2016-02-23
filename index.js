@@ -214,7 +214,7 @@ function createVariableLengthTextParser(execlib) {
           rec = this.buffer;
           this.buffer = this.createBuffer(completechunk);
         } else {
-          this.augmentBuffer(chunk);
+          this.augmentBuffer(completechunk);
         }
         if (rec) {
           this.postProcessFileToData(rec);
