@@ -10,6 +10,16 @@ function createVariableLengthTextParser(execlib) {
     doCreate.bind(null, d)
   );
 
+  function cutOffByNumber (string, length) {
+    return string.substring(length);
+  }
+  function cutOffByOtherString (string, otherstring) {
+    return cutOffByNumber(string, otherstring.length);
+  }
+  function firstChars (string, charnumber) {
+    return string.substring(0, charnumber);
+  }
+
   function doCreate(defer, BaseParser) {
     function BufferWithCursor(param) {
       this.buffer = new Buffer(param);
@@ -225,7 +235,7 @@ function createVariableLengthTextParser(execlib) {
       }
     };
     VariableLengthTextParser.prototype.finalize = function(){
-      //console.log('finalize',this.doubleBuffer.current.remaining(), this.doubleBuffer.chunk());
+      //console.log('finalize',this.doubleBuffer.current.remaining(), this.doubleBuffer.chunk(), 'my buffer', this.buffer);
       if(this.buffer){
         this.postProcessFileToData(this.buffer);
         return this.buffer;
@@ -235,19 +245,78 @@ function createVariableLengthTextParser(execlib) {
       return true;
     };
     VariableLengthTextParser.prototype.createBuffer = function (data) {
+      var stringdata = data.toString('utf8').trim();
       if (this.fieldList.length>0) {
-        return this.createObjBuffer(data);
+        return this.createObjBuffer(stringdata);
       } else {
-        return data.toString('utf8').trim();
+        return stringdata;
       }
     };
-    VariableLengthTextParser.prototype.createObjBuffer = function (data) {
+    VariableLengthTextParser.prototype.createObjBuffer = function (stringdata) {
       var ret = {},
-        fields = data.toString().split(this.fieldDelimiter);
+        _ret = ret,
+        fields = this.splitToFields(stringdata),
+        _fields = fields;
+      //console.log('fields', fields);
       this.fieldList.forEach(function(fieldname, fieldindex){
-        ret[fieldname] = fields[fieldindex];
+        _ret[fieldname] = _fields[fieldindex];
       });
+      _ret = null;
+      _fields = null;
       return ret;
+    };
+    VariableLengthTextParser.prototype.splitToFields = function (string) {
+      var ret = [], fieldres;
+      //console.log('splitToFields', string, this.fieldDelimiter);
+      while (string.length > 0) {
+        if (string.indexOf(this.fieldDelimiter) === 0) {
+          fieldres = this.produceField(cutOffByOtherString(string, this.fieldDelimiter));
+          if (fieldres) {
+            ret.push(fieldres.field);
+            string = fieldres.string;
+          } else {
+            break;
+          }
+        } else {
+          string = cutOffByNumber(string, 1);
+        }
+      }
+      return ret;
+    };
+    VariableLengthTextParser.prototype.produceField = function (string) {
+      var fd = this.fieldDelimiter,
+        td = this.textDelimiter,
+        havetextdelimiter,
+        field = '';
+      //console.log('produceField', string);
+      havetextdelimiter = string.indexOf(td) === 0;
+      if (havetextdelimiter) {
+        string = cutOffByOtherString(string, td);
+      }
+      while (string.length > 0) {
+        //console.log('loop, string', string, 'field', field);
+        if (string.indexOf(fd) === 0) {
+          if (havetextdelimiter) {
+            field += firstChars(string, 1);
+            string = cutOffByNumber(string, 1);
+            continue;
+          } else {
+            //string = cutOffByOtherString(string, fd);
+            break;
+          }
+        }
+        if (string.indexOf(td) === 0) {
+          if (havetextdelimiter) {
+            string = cutOffByNumber(string, 1);
+            havetextdelimiter = false;
+            continue;
+          }
+        }
+        field += firstChars(string, 1);
+        string = cutOffByNumber(string, 1);
+      }
+      //console.log('finally, string', string, 'field', field);
+      return {field: field, string: string};
     };
     VariableLengthTextParser.prototype.createFileToDataItem = function (inputbuffer, resulthash, fieldprocessor, fieldprocessorname) {
       var range = fieldprocessor.range,
@@ -261,6 +330,7 @@ function createVariableLengthTextParser(execlib) {
     };
     VariableLengthTextParser.prototype.recordDelimiter = null;
     VariableLengthTextParser.prototype.fieldDelimiter = null;
+    VariableLengthTextParser.prototype.textDelimiter = '"';
     VariableLengthTextParser.prototype.fieldList = null;
     defer.resolve(VariableLengthTextParser);
   }
