@@ -271,14 +271,17 @@ function createVariableLengthTextParser(execlib) {
       while (string.length > 0) {
         if (string.indexOf(this.fieldDelimiter) === 0) {
           fieldres = this.produceField(cutOffByOtherString(string, this.fieldDelimiter));
-          if (fieldres) {
-            ret.push(fieldres.field);
-            string = fieldres.string;
-          } else {
-            break;
+        } else {
+          fieldres = this.produceField(string);
+        }
+        if (fieldres) {
+          ret.push(fieldres.field);
+          string = fieldres.string;
+          while (string.length && string.indexOf(this.fieldDelimiter) !== 0) {
+            string = cutOffByNumber(string, 1);
           }
         } else {
-          string = cutOffByNumber(string, 1);
+          break;
         }
       }
       return ret;
