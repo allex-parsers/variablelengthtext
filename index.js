@@ -229,16 +229,14 @@ function createVariableLengthTextParser(execlib) {
           this.augmentBuffer(completechunk);
         }
         if (rec) {
-          this.postProcessFileToData(rec);
-          ret.push(rec);
+          ret.push(this.postProcessFileToData(rec));
         }
       }
     };
     VariableLengthTextParser.prototype.finalize = function(){
       //console.log('finalize',this.doubleBuffer.current.remaining(), this.doubleBuffer.chunk(), 'my buffer', this.buffer);
       if(this.buffer){
-        this.postProcessFileToData(this.buffer);
-        return this.buffer;
+        return this.postProcessFileToData(this.buffer);
       }
     };
     VariableLengthTextParser.prototype.isNewRecord = function (data) {
