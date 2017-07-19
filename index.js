@@ -1,5 +1,5 @@
 function createLib(execlib) {
-  return execlib.loadDependencies('client', ['allex:base:parser', 'allex:extractionbuffer:parser'], createVariableLengthTextParser.bind(null, execlib));
+  return execlib.loadDependencies('client', ['allex_baseparser', 'allex_extractionbufferparser'], createVariableLengthTextParser.bind(null, execlib));
 }
 
 function createVariableLengthTextParser(execlib, BaseParser, DoubleBufferWithCursor) {
