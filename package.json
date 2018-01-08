@@ -1,6 +1,6 @@
 {
   "name": "allex_variablelengthtextparser",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AllexJS parser of a text file with variable number of chars per row",
   "main": "index.js",
   "scripts": {

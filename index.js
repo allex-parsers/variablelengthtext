@@ -85,7 +85,10 @@ function createVariableLengthTextParser(execlib, BaseParser, DoubleBufferWithCur
     //console.log('splitToFields', string, this.fieldDelimiter);
     while (string.length > 0) {
       if (string.indexOf(this.fieldDelimiter) === 0) {
-        fieldres = this.produceField(cutOffByOtherString(string, this.fieldDelimiter));
+        fieldres = (ret.length < 1) ?
+          {field: '', string: string}
+          :
+          this.produceField(cutOffByOtherString(string, this.fieldDelimiter));
       } else {
         fieldres = this.produceField(string);
       }
